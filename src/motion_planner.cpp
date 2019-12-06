@@ -48,6 +48,7 @@ JRCMotionPlanner::JRCMotionPlanner(ros::NodeHandle &nh)
     joint_traj_srv_ = nh_.advertiseService("/joint_traj_srv", &JRCMotionPlanner::JointTrajCallback, this);
     ee_pose_srv_ = nh_.advertiseService("/ee_pose_srv", &JRCMotionPlanner::EePoseCallback, this);
     ee_rpy_srv_ = nh_.advertiseService("/ee_rpy_srv", &JRCMotionPlanner::EeRpyCallback, this);
+	ee_delta_srv_ = nh_.advertiseService("/ee_delta_srv", &JRCMotionPlanner::EeDeltaCallback, this);
 }
 
 void JRCMotionPlanner::init()
@@ -64,7 +65,6 @@ void JRCMotionPlanner::init()
 }
 
 JRCMotionPlanner::~JRCMotionPlanner() { delete group_; }
-
 
 bool JRCMotionPlanner::EePoseCallback(husky_train::EePose::Request& req,
                                       husky_train::EePose::Response& res)
@@ -137,18 +137,18 @@ bool JRCMotionPlanner::EeTrajCallback(husky_train::EeTraj::Request& req,
     res.message = "Everything went OK";
 }
 
-/*
-$ rossrv show husky_train/JointTraj 
-trajectory_msgs/JointTrajectoryPoint point
-  float64[] positions
-  float64[] velocities
-  float64[] accelerations
-  float64[] effort
-  duration time_from_start
----
-bool success
-string message
-*/
+bool JRCMotionPlanner::EeDeltaCallback(husky_train::EeDelta::Request& req,
+									   husky_train::EeDelta::Response& res)
+{
+	double delta_x = req.pose.position.x;
+	double delta_y = req.pose.position.y;
+	double delta_z = req.pose.position.z;
+	
+	cartesionPathPlanner(delta_x, delta_y, delta_z);
+	res.success = true;
+	res.message = "Move to target successfully!";
+}
+
 bool JRCMotionPlanner::JointTrajCallback(husky_train::JointTraj::Request& req,
                                          husky_train::JointTraj::Response& res)
 {
@@ -220,13 +220,11 @@ std::vector<double> JRCMotionPlanner::getCurrentJointStateFromMoveit() { return 
 
 std::vector<double> JRCMotionPlanner::getCurrentRPY() { return group_->getCurrentRPY(); }
 
-
 std::size_t JRCMotionPlanner::getPlanPointNum(const moveit::planning_interface::MoveGroupInterface::Plan& plan)
 {
     moveit_msgs::RobotTrajectory trajectory = plan.trajectory_;
     return trajectory.joint_trajectory.points.size();
 }
-
 
 bool JRCMotionPlanner::executePlan(const moveit::planning_interface::MoveGroupInterface::Plan& plan)
 {
@@ -235,8 +233,6 @@ bool JRCMotionPlanner::executePlan(const moveit::planning_interface::MoveGroupIn
     std::cout << "Motion execute duration: " << (ros::Time::now() - start_time).toSec() << "s" << std::endl;
     std::cout << "\n MOVE TO TARGET SUCCESSFULLY\n" << std::endl;
 }
-
-
 
 void JRCMotionPlanner::confirmToAct()
 {
@@ -339,7 +335,6 @@ void JRCMotionPlanner::confirmToAct(const geometry_msgs::Pose &goal)
 	}
 }
 
-
 void JRCMotionPlanner::setJointValueTarget(const std::vector<double> joint_values)
 {
 	group_->setJointValueTarget(joint_values);
@@ -360,7 +355,6 @@ void JRCMotionPlanner::setAbsoluteJointValueTarget(const int joint_index, const 
 	current_joint_values[joint_index] = joint_values;
 	setJointValueTarget(current_joint_values);
 }
-
 
 // Plan with pre-defined postures
 void JRCMotionPlanner::moveToTargetNamed(const std::string &target_name)
@@ -541,7 +535,6 @@ void JRCMotionPlanner::moveLineTarget(const geometry_msgs::Pose &goal)
 	}
 }
 
-
 void JRCMotionPlanner::moveLineTarget(const geometry_msgs::Pose &start, const geometry_msgs::Pose &goal)
 {
 	std::cout << "Begin cartesian line plan by MoveIt computeCartesianPath ..." << std::endl;
@@ -603,7 +596,6 @@ void JRCMotionPlanner::moveLineTarget(const geometry_msgs::Pose &start, const ge
 		exit(0); // TODO
 	}
 }
-
 
 double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance_y, double distance_z, double roll,
                                               double pitch, double yaw, int number_point, int number_distance)
@@ -860,7 +852,7 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 	plan.trajectory_ = moveit_robot_traj_msg;
 	confirmToAct();
 	executePlan(plan);
-	executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
+	// executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
 }
 
 double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance_y, double distance_z, int number_point,
@@ -874,12 +866,12 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
     std::vector<double> joint_recv = getCurrentJointStateFromMoveit();
 
 	qPre << joint_recv[0], joint_recv[1], joint_recv[2], joint_recv[3], joint_recv[4], joint_recv[5];
-	if (debug_print_)
-	{
-		std::cout << "qPre: "
-		          << "\n"
-		          << qPre << std::endl;
-	}
+	// if (debug_print_)
+	// {
+	// 	std::cout << "qPre: "
+	// 	          << "\n"
+	// 	          << qPre << std::endl;
+	// }
 
 	// Current transformation, including T & R
 	Eigen::Matrix4d transformation = parser_.Foward(qPre);
@@ -956,7 +948,7 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 		}
 		// printf("\n\njoint values : %d\n",(int)i);
         if (debug_print_){
-            // std::cout << q  << "\n" << std::endl;
+            std::cout << q  << "\n" << std::endl;
         }
 		
 		qPre = q;
@@ -967,7 +959,7 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 		}
 		if (debug_print_)
 		{
-			std::cout << "Planning time is : " << (ros::Time::now() - start_time).toSec() << "s" << std::endl;
+			// std::cout << "Planning time is : " << (ros::Time::now() - start_time).toSec() << "s" << std::endl;
 		}
 	}
 	if(debug_print_)
@@ -1018,8 +1010,8 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 	plan.trajectory_ = moveit_robot_traj_msg;
 	confirmToAct();
     // ROS_INFO_STREAM(plan);
-	// executePlan(plan);
-	executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
+	executePlan(plan);
+	// executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
 }
 
 double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance_y, double distance_z)

@@ -75,6 +75,8 @@ int main(int argc, char** argv)
     spinner.start();
 
     double x, y, z, num1, num2;
+    std::string use_arm;
+    nh.getParam("use_arm", use_arm);
     nh.getParam("x", x);
     nh.getParam("y", y);
     nh.getParam("z", z);
@@ -100,20 +102,32 @@ int main(int argc, char** argv)
     }
     std::cout << std::endl;
 
-    std::vector<double> joint_values = {0.861787405574,
-                                        -1.54073192249, 
-                                        1.4611893835, 
-                                        0.058000607052, 
-                                        0.841070054649, 
-                                        -0.874129776051};
-    motion_planner.setJointValueTarget(joint_values);
+    // std::vector<double> joint_values = {0.861787405574,
+    //                                     -1.54073192249, 
+    //                                     1.4611893835, 
+    //                                     0.058000607052, 
+    //                                     0.841070054649, 
+    //                                     -0.874129776051};
+    std::vector<double> joint_values = {-2.32403999964,
+									    -1.12740451494,
+										-1.71879083315,
+										-3.36987525622,
+										-2.19070560137,
+										1.03023681641};
+    std::vector<double> joint_values_pre_r = {1.93697440624, -1.95270091692, 1.76591014862, 0.136884212494, 1.84678673744, 0.0161745846272};
+    std::vector<double> joint_values_pre_l = {-1.87909251848, -1.03788692156, -1.53594905535, -3.57448703447, -1.69703323046, 1.44130086899};
+    std::vector<double> joint_values_home_l = {};
+    std::vector<double> joint_values_home_r = {};
 
-    motion_planner.cartesionPathPlanner(0.1, 0.1, -0.1);
+    if(use_arm == "left")motion_planner.setJointValueTarget(joint_values_pre_l);
+    if(use_arm == "right")motion_planner.setJointValueTarget(joint_values_pre_r);
+
+    // motion_planner.cartesionPathPlanner(0.05, 0.0, 0.0);
 
     return 0;
 
     motion_planner.cartesionPathPlanner(x,0.0,0.0, num1,num2);
-    motion_planner.cartesionPathPlanner(0.0,y,0.1, num1,num2);
+    motion_planner.cartesionPathPlanner(0.0,y,0.0, num1,num2);
     motion_planner.cartesionPathPlanner(0.0,0.0,z, num1,num2);
 
 

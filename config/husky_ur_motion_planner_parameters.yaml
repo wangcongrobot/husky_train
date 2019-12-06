@@ -1,9 +1,10 @@
 
 
-confirm_act : True
+confirm_act : False
 debug_print : True
 
-moveit_group : "left_arm"
+moveit_group : "right_arm"
+# moveit_group : "left_arm"
 
 planning_id : "RRTConnectkConfigDefault"
 planning_attempts : 1
@@ -24,13 +25,16 @@ kinova_driver_tool_pose_topic : "j2n6s300_driver/out/tool_pose"
 joint_states_topic : "joint_states"
 
 moveit_traj_action_topic : "/l_arm_controller/follow_joint_trajectory"
+# moveit_traj_action_topic : "/r_arm_controller/follow_joint_trajectory"
 
-moveit_traj_arm_base_frame : "base_link"
+moveit_traj_arm_base_frame : "l_ur5_base_link"
+# moveit_traj_arm_base_frame : "r_ur5_base_link"
 
-use_arm : "left"
+use_arm : "right"
+# use_arm : "left"
 
-x : 0.
-y : 0.
-z : 0.1
-num1 : 200
-num2 : 1
+x : 0.05
+y : 0.05
+z : 0.05
+num1 : 100
+num2 : 2

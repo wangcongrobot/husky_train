@@ -39,6 +39,9 @@
 #include <husky_train/EeTrajResponse.h>
 #include <husky_train/JointTraj.h>
 #include <husky_train/JointTrajResponse.h>
+#include <husky_train/EeDelta.h>
+#include <husky_train/EeDeltaResponse.h>
+
 // from husky_train.srv import EePose, EePoseResponse, EeRpy, EeRpyResponse, EeTraj, EeTrajResponse, JointTraj, JointTrajResponse
 
 #define DEBUG_PRINT true
@@ -207,25 +210,21 @@ private:
   std::string moveit_traj_action_topic_;
   std::string moveit_traj_arm_base_frame_;
 
-  std::vector<std::string> left_arm_joint_names_ = {"l_ur5_arm_elbow_joint", "l_ur5_arm_shoulder_lift_joint", "l_ur5_arm_shoulder_pan_joint", "l_ur5_arm_wrist_1_joint", "l_ur5_arm_wrist_2_joint", "l_ur5_arm_wrist_3_joint"};
-  std::vector<std::string> right_arm_joint_names_ = {"r_ur5_arm_elbow_joint", "r_ur5_arm_shoulder_lift_joint", "r_ur5_arm_shoulder_pan_joint", "r_ur5_arm_wrist_1_joint", "r_ur5_arm_wrist_2_joint", "r_ur5_arm_wrist_3_joint"};
   std::vector<std::string> wheel_names_ = {"front_left_wheel", "front_right_wheel", "rear_left_wheel", "rear_right_wheel"};
   std::vector<std::string> ptu_names_ = {"husky_ptu_pan", "husky_ptu_tilt"};
-
+  std::vector<std::string> left_arm_joint_names_ = {"l_ur5_arm_shoulder_pan_joint", 
+                                                    "l_ur5_arm_shoulder_lift_joint", 
+                                                    "l_ur5_arm_elbow_joint",
+                                                    "l_ur5_arm_wrist_1_joint", 
+                                                    "l_ur5_arm_wrist_2_joint", 
+                                                    "l_ur5_arm_wrist_3_joint"};
+  std::vector<std::string> right_arm_joint_names_ = {"r_ur5_arm_shoulder_pan_joint", 
+                                                     "r_ur5_arm_shoulder_lift_joint", 
+                                                     "r_ur5_arm_elbow_joint", 
+                                                     "r_ur5_arm_wrist_1_joint", 
+                                                     "r_ur5_arm_wrist_2_joint", 
+                                                     "r_ur5_arm_wrist_3_joint"};
   std::string use_arm_;
-
-/*
-name: [front_left_wheel, front_right_wheel, 
-
-husky_ptu_pan, husky_ptu_tilt, 
-
-l_ur5_arm_elbow_joint, l_ur5_arm_shoulder_lift_joint, l_ur5_arm_shoulder_pan_joint, l_ur5_arm_wrist_1_joint,
-  l_ur5_arm_wrist_2_joint, l_ur5_arm_wrist_3_joint, 
-  
-  r_ur5_arm_elbow_joint, r_ur5_arm_shoulder_lift_joint, r_ur5_arm_shoulder_pan_joint, r_ur5_arm_wrist_1_joint, r_ur5_arm_wrist_2_joint, r_ur5_arm_wrist_3_joint, 
-  
-  rear_left_wheel, rear_right_wheel]
-*/
 
   /***Get parameters from husky_ur_motion_planner_parameters.yaml***/
   // MoveIt config
@@ -254,6 +253,7 @@ l_ur5_arm_elbow_joint, l_ur5_arm_shoulder_lift_joint, l_ur5_arm_shoulder_pan_joi
   ros::ServiceServer joint_traj_srv_;
   ros::ServiceServer ee_pose_srv_;
   ros::ServiceServer ee_rpy_srv_;
+  ros::ServiceServer ee_delta_srv_;
   geometry_msgs::Pose pose_target_;
 
   bool EeTrajCallback(husky_train::EeTraj::Request& req,
@@ -264,7 +264,8 @@ l_ur5_arm_elbow_joint, l_ur5_arm_shoulder_lift_joint, l_ur5_arm_shoulder_pan_joi
                       husky_train::EePose::Response& res);
   bool EeRpyCallback(husky_train::EeRpy::Request& req,
                        husky_train::EeRpy::Response& res);
-
+  bool EeDeltaCallback(husky_train::EeDelta::Request& req,
+                       husky_train::EeDelta::Response& res);
 };
 
 #endif // MOTION_PLANNER_H

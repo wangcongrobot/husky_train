@@ -83,36 +83,61 @@ int main(int argc, char** argv)
     nh.getParam("num2", num2);
     std::cout << x << y << z << num1 << num2 << std::endl;
 
+	std::string use_arm_;
+	nh.getParam("moveit_group", use_arm_);
+
     Parser parser_;
     JRCMotionPlanner motion_planner(nh);
 
     bool debug_print_ = true;
-    double trajectory_velocity_scaling_ = 0.5;
-    moveit::planning_interface::MoveGroupInterface group_("left_arm");
-    std::vector<std::string> left_arm_joint_names_ = {"l_ur5_arm_elbow_joint", "l_ur5_arm_shoulder_lift_joint", "l_ur5_arm_shoulder_pan_joint", "l_ur5_arm_wrist_1_joint", "l_ur5_arm_wrist_2_joint", "l_ur5_arm_wrist_3_joint"};
-    std::vector<std::string> right_arm_joint_names_ = {"r_ur5_arm_elbow_joint", "r_ur5_arm_shoulder_lift_joint", "r_ur5_arm_shoulder_pan_joint", "r_ur5_arm_wrist_1_joint", "r_ur5_arm_wrist_2_joint", "r_ur5_arm_wrist_3_joint"};
-    std::string use_arm_ = "left";
+    double trajectory_velocity_scaling_ = 0.2;
+    moveit::planning_interface::MoveGroupInterface group_(use_arm_);
+    std::vector<std::string> left_arm_joint_names_ = {"l_ur5_arm_shoulder_pan_joint", 
+													  "l_ur5_arm_shoulder_lift_joint", 
+													  "l_ur5_arm_elbow_joint",
+													  "l_ur5_arm_wrist_1_joint", 
+													  "l_ur5_arm_wrist_2_joint", 
+													  "l_ur5_arm_wrist_3_joint"};
+    std::vector<std::string> right_arm_joint_names_ = {"r_ur5_arm_shoulder_pan_joint", 
+													   "r_ur5_arm_shoulder_lift_joint", 
+													   "r_ur5_arm_elbow_joint", 
+													   "r_ur5_arm_wrist_1_joint", 
+													   "r_ur5_arm_wrist_2_joint", 
+													   "r_ur5_arm_wrist_3_joint"};
+    // std::string use_arm_ = "left";
     std::string moveit_traj_arm_base_frame_ = "l_ur5_base_link";
 
-
+	std::vector<double> joints = group_.getCurrentJointValues();
+    for (int i =0; i < joints.size(); i++){
+        std::cout << joints.at(i) << ' ';
+    }
+	std::cout << "\n" <<  std::endl;
+	// return 0;
     std::vector<double> current_joint_values = motion_planner.getCurrentJointStateFromMoveit();
     // ROS_INFO_STREAM(current_joint_values);
-    for (std::vector<double>::const_iterator i = current_joint_values.begin(); i != current_joint_values.end(); ++i){
-        std::cout << *i << ' ' ;
-    }
-    std::cout << std::endl;
+    // for (std::vector<double>::const_iterator i = current_joint_values.begin(); i != current_joint_values.end(); ++i){
+    //     std::cout << *i << ' ' ;
+    // }
+    std::cout << "\n" << std::endl;
     for (int i =0; i < current_joint_values.size(); i++){
         std::cout << current_joint_values.at(i) << ' ';
     }
-    std::cout << std::endl;
+    std::cout << "\n" << std::endl;
 
-    std::vector<double> joint_values = {0.861787405574,
-                                        -1.54073192249, 
-                                        1.4611893835, 
-                                        0.058000607052, 
-                                        0.841070054649, 
-                                        -0.874129776051};
-    motion_planner.setJointValueTarget(joint_values);
+    // std::vector<double> joint_values = {0.861787405574,
+    //                                     -1.54073192249, 
+    //                                     1.4611893835, 
+    //                                     0.058000607052, 
+    //                                     0.841070054649, 
+    //                                     -0.874129776051};
+    std::vector<double> joint_values = {-2.32403999964,
+									    -1.12740451494,
+										-1.71879083315,
+										-3.36987525622,
+										-2.19070560137,
+										1.33023681641};
+										
+    // motion_planner.setJointValueTarget(joint_values);
 
 
     double distance_x = x; 
@@ -133,7 +158,7 @@ int main(int argc, char** argv)
 	{
 		std::cout << "qPre: "
 		          << "\n"
-		          << qPre << std::endl;
+		          << (qPre * 180 / Pi) << std::endl;
 	}
 
 	// Current transformation, including T & R
@@ -208,6 +233,7 @@ int main(int argc, char** argv)
 			point.time_from_start = ros::Duration();
 			follow_joint_traj_goal.trajectory.points.push_back(point);
 			moveit_robot_traj_msg.joint_trajectory.points.push_back(point);
+			// ROS_INFO_STREAM(point);
 		}
 		// printf("\n\njoint values : %d\n",(int)i);
         if (debug_print_){
@@ -222,7 +248,7 @@ int main(int argc, char** argv)
 		}
 		if (debug_print_)
 		{
-			std::cout << "Planning time is : " << (ros::Time::now() - start_time).toSec() << "s" << std::endl;
+			// std::cout << "Planning time is : " << (ros::Time::now() - start_time).toSec() << "s" << std::endl;
 		}
 	}
 	if(debug_print_)
@@ -240,6 +266,7 @@ int main(int argc, char** argv)
         std::cout << "trajectory points number: " << moveit_robot_traj_msg.joint_trajectory.points.size() << ", "
 	          << result * 100 << "%" << std::endl;
     }
+	ROS_INFO_STREAM(moveit_robot_traj_msg);
 	
 	if (result == 0.0)
 	{
@@ -254,6 +281,8 @@ int main(int argc, char** argv)
 		ROS_ERROR_STREAM("compute cartesion path : " << result * 100 << "%");
 	}
 	//    addTimeToTraj(&moveit_robot_traj_msg, TRAJECTORY_VELOCITY_SCALING);
+	ROS_INFO_STREAM(moveit_robot_traj_msg);
+	ROS_INFO_STREAM("+++++++++++++++++++++++++++++++++++++++++++++++");
 	robot_trajectory::RobotTrajectory rt(group_.getCurrentState()->getRobotModel(), group_.getName());
 	rt.setRobotTrajectoryMsg(*group_.getCurrentState(), moveit_robot_traj_msg);
 	trajectory_processing::IterativeParabolicTimeParameterization iptp;
@@ -266,15 +295,15 @@ int main(int argc, char** argv)
 	}
 	rt.getRobotTrajectoryMsg(moveit_robot_traj_msg);
     if (debug_print_){
-        // ROS_INFO_STREAM(moveit_robot_traj_msg);
+        ROS_INFO_STREAM(moveit_robot_traj_msg);
     }
 
 	moveit::planning_interface::MoveGroupInterface::Plan plan;
 	plan.trajectory_ = moveit_robot_traj_msg;
 	motion_planner.confirmToAct();
     // ROS_INFO_STREAM(plan);
-	// motion_planner.executePlan(plan);
-	motion_planner.executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
+	motion_planner.executePlan(plan);
+	// motion_planner.executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
 
 
     ros::shutdown();

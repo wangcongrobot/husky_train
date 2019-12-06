@@ -26,6 +26,7 @@ find_package(Eigen REQUIRED)
    EeRpy.srv
    EeTraj.srv
    JointTraj.srv
+   EeDelta.srv
  )
 
 ## Generate added messages and services with any dependencies listed here
@@ -33,7 +34,6 @@ find_package(Eigen REQUIRED)
    DEPENDENCIES
    std_msgs geometry_msgs trajectory_msgs
  )
-
 
 catkin_package(
   INCLUDE_DIRS include
