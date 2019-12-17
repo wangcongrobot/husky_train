@@ -114,22 +114,72 @@ int main(int argc, char** argv)
 										-3.36987525622,
 										-2.19070560137,
 										1.03023681641};
-    std::vector<double> joint_values_pre_r = {1.93697440624, -1.95270091692, 1.76591014862, 0.136884212494, 1.84678673744, 0.0161745846272};
-    std::vector<double> joint_values_pre_l = {-1.87909251848, -1.03788692156, -1.53594905535, -3.57448703447, -1.69703323046, 1.44130086899};
+    std::vector<double> joint_values_pre_r = {1.55030405521, -1.961748902, 1.51336669922, 0.365389347076, 1.54746341705, 0.0328536294401};
+    std::vector<double> joint_values_pre_l = {-2.24311525026, -1.25565511385, -1.27606851259, -3.64803201357, -2.29276043573, 1.52321529388};
     std::vector<double> joint_values_home_l = {};
     std::vector<double> joint_values_home_r = {};
 
-    if(use_arm == "left")motion_planner.setJointValueTarget(joint_values_pre_l);
-    if(use_arm == "right")motion_planner.setJointValueTarget(joint_values_pre_r);
+    // if(use_arm == "left")
+        // motion_planner.setJointValueTarget(joint_values_pre_l);
+    // if(use_arm == "right")
+        motion_planner.setJointValueTarget(joint_values_pre_r);
 
     // motion_planner.cartesionPathPlanner(0.05, 0.0, 0.0);
 
-    return 0;
+/*
+left_arm> current 
+joints = [-2.24311525026 -1.25565511385 -1.27606851259 -3.64803201357 -2.29276043573 1.52321529388]
+l_ur5_arm_ee_link pose = [
+header: 
+  seq: 0
+  stamp: 
+    secs: 1576451664
+    nsecs: 579046964
+  frame_id: "/base_link"
+pose: 
+  position: 
+    x: 0.294849805901
+    y: 0.450234974908
+    z: 0.950940254818
+  orientation: 
+    x: -0.943079342293
+    y: -0.0466835377227
+    z: 0.00676703148806
+    w: 0.329205420262 ]
+l_ur5_arm_ee_link RPY = [-2.470715683082082, -0.017947584602490754, 0.09258869202268585]
 
-    motion_planner.cartesionPathPlanner(x,0.0,0.0, num1,num2);
-    motion_planner.cartesionPathPlanner(0.0,y,0.0, num1,num2);
-    motion_planner.cartesionPathPlanner(0.0,0.0,z, num1,num2);
+right_arm> current 
+joints = [1.55030405521 -1.961748902 1.51336669922 0.365389347076 1.54746341705 0.0328536294401]
+r_ur5_arm_ee_link pose = [
+header: 
+  seq: 0
+  stamp: 
+    secs: 1576452868
+    nsecs: 165055036
+  frame_id: "/base_link"
+pose: 
+  position: 
+    x: 0.408850561491
+    y: -0.474375193631
+    z: 0.833826801551
+  orientation: 
+    x: -0.917129099557
+    y: 0.0135222828588
+    z: -0.0389234838932
+    w: 0.396454694781 ]
+r_ur5_arm_ee_link RPY = [-2.323823652115307, -0.060787940629162866, -0.055925372450627155]
 
+*/
+
+    // return 0;
+
+    // motion_planner.cartesionPathPlanner(x,0.0,0.0, num1,num2);
+    // motion_planner.cartesionPathPlanner(0.0,y,0.0, num1,num2);
+    // motion_planner.cartesionPathPlanner(0.0,0.0,z, num1,num2);
+
+    // motion_planner.moveLineTarget(x,0.0,0.0);
+    // motion_planner.moveLineTarget(0.0,y,0.0);
+    // motion_planner.moveLineTarget(0.0,0.0,z);
 
     return 0;
 

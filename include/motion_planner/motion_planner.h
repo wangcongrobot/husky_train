@@ -187,6 +187,8 @@ public:
   /** \brief Enter 'n' to confirm to move */
   void confirmToAct(const geometry_msgs::Pose& goal);
 
+  void moveLineTarget(double distance_x, double distance_y, double distance_z);
+
 private:
   ros::NodeHandle nh_;
   ros::Duration timeout_;

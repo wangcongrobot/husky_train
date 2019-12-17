@@ -127,7 +127,8 @@ bool JRCMotionPlanner::EeTrajCallback(husky_train::EeTraj::Request& req,
     }
     if (!plan_valid){
         ROS_ERROR_STREAM("Plan found in " << plan_steps << " steps");
-        exit(0);
+		ROS_ERROR_STREAM("No Motion, continue...");
+        // exit(0);
     }
     // Execute the plan
     confirmToAct(req.pose);
@@ -140,11 +141,20 @@ bool JRCMotionPlanner::EeTrajCallback(husky_train::EeTraj::Request& req,
 bool JRCMotionPlanner::EeDeltaCallback(husky_train::EeDelta::Request& req,
 									   husky_train::EeDelta::Response& res)
 {
+	ROS_INFO_STREAM("Received action: "<< req.pose.position.x << " " << req.pose.position.y << " " << req.pose.position.z);
 	double delta_x = req.pose.position.x;
 	double delta_y = req.pose.position.y;
 	double delta_z = req.pose.position.z;
+
+	geometry_msgs::Pose current_pose = getCurrentPoseFromMoveit();
+	geometry_msgs::Pose goal_pose = current_pose;
+	goal_pose.position.x += delta_x;
+	goal_pose.position.y += delta_y;
+	goal_pose.position.z += delta_z;
+	// moveLineTarget(goal_pose);
+	moveToTargetBestTime(goal_pose);
 	
-	cartesionPathPlanner(delta_x, delta_y, delta_z);
+	// cartesionPathPlanner(delta_x, delta_y, delta_z);
 	res.success = true;
 	res.message = "Move to target successfully!";
 }
@@ -456,7 +466,8 @@ void JRCMotionPlanner::moveToTargetBestTime(const geometry_msgs::Pose &target)
 	if (!plan_valid)
 	{
 		ROS_ERROR_STREAM("Plan found in " << plan_steps << " steps");
-		exit(0); // TODO
+		ROS_ERROR_STREAM("No Motion, continue...");
+		// exit(0); // TODO
 	}
 
 	// Execute the plan
@@ -467,6 +478,17 @@ void JRCMotionPlanner::moveToTargetBestTime(const geometry_msgs::Pose &target)
 void JRCMotionPlanner::moveToTargetBestTime(const geometry_msgs::PoseStamped &target)
 {
 	moveToTargetBestTime(target.pose);
+}
+
+void JRCMotionPlanner::moveLineTarget(double distance_x, double distance_y, double distance_z)
+{
+	geometry_msgs::Pose start_pose = getCurrentPoseFromMoveit();
+	geometry_msgs::Pose goal_pose = start_pose;
+	goal_pose.position.x += distance_x;
+	goal_pose.position.y += distance_y;
+	goal_pose.position.z += distance_z;
+	// moveLineTarget(goal_pose);
+	moveToTargetBestTime(goal_pose);
 }
 
 // move line by MoveIt computeCartesianPath functions
@@ -531,7 +553,8 @@ void JRCMotionPlanner::moveLineTarget(const geometry_msgs::Pose &goal)
 	{
 		ROS_ERROR_STREAM("Plan found in " << cartesian_plan.planning_time_ << " seconds with " << plan_steps
 		                                  << " steps");
-		exit(0); // TODO
+		ROS_ERROR_STREAM("No Motion, continue...");
+		// exit(0); // TODO
 	}
 }
 
@@ -593,6 +616,7 @@ void JRCMotionPlanner::moveLineTarget(const geometry_msgs::Pose &start, const ge
 	{
 		ROS_ERROR_STREAM("Plan found in " << cartesian_plan.planning_time_ << " seconds with " << plan_steps
 		                                  << " steps");
+		ROS_ERROR_STREAM("No Motion, continue...");
 		exit(0); // TODO
 	}
 }
@@ -947,9 +971,9 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 			moveit_robot_traj_msg.joint_trajectory.points.push_back(point);
 		}
 		// printf("\n\njoint values : %d\n",(int)i);
-        if (debug_print_){
-            std::cout << q  << "\n" << std::endl;
-        }
+        // if (debug_print_){
+            // std::cout << q  << "\n" << std::endl;
+        // }
 		
 		qPre = q;
 		if ((ros::Time::now() - start_time) > timeout)
@@ -990,28 +1014,34 @@ double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance
 	{
 		ROS_ERROR_STREAM("compute cartesion path : " << result * 100 << "%");
 	}
-	//    addTimeToTraj(&moveit_robot_traj_msg, TRAJECTORY_VELOCITY_SCALING);
-	robot_trajectory::RobotTrajectory rt(group_->getCurrentState()->getRobotModel(), group_->getName());
-	rt.setRobotTrajectoryMsg(*group_->getCurrentState(), moveit_robot_traj_msg);
-	trajectory_processing::IterativeParabolicTimeParameterization iptp;
+	if (result < 0.1) {
+		ROS_ERROR_STREAM("Do not execute the trajectory, connitue...");
+	} 
+	else {
+				//    addTimeToTraj(&moveit_robot_traj_msg, TRAJECTORY_VELOCITY_SCALING);
+		robot_trajectory::RobotTrajectory rt(group_->getCurrentState()->getRobotModel(), group_->getName());
+		rt.setRobotTrajectoryMsg(*group_->getCurrentState(), moveit_robot_traj_msg);
+		trajectory_processing::IterativeParabolicTimeParameterization iptp;
 
-	bool IptpSuccess = false;
-	IptpSuccess      = iptp.computeTimeStamps(rt, trajectory_velocity_scaling_);
-	if (!IptpSuccess)
-	{
-		ROS_ERROR("Computed time stamped FAILED");
+		bool IptpSuccess = false;
+		IptpSuccess      = iptp.computeTimeStamps(rt, trajectory_velocity_scaling_);
+		if (!IptpSuccess)
+		{
+			ROS_ERROR("Computed time stamped FAILED");
+		}
+		rt.getRobotTrajectoryMsg(moveit_robot_traj_msg);
+		if (debug_print_){
+			// ROS_INFO_STREAM(moveit_robot_traj_msg);
+		}
+
+		moveit::planning_interface::MoveGroupInterface::Plan plan;
+		plan.trajectory_ = moveit_robot_traj_msg;
+		confirmToAct();
+		// ROS_INFO_STREAM(plan);
+		executePlan(plan);
+		// executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
 	}
-	rt.getRobotTrajectoryMsg(moveit_robot_traj_msg);
-    if (debug_print_){
-        // ROS_INFO_STREAM(moveit_robot_traj_msg);
-    }
 
-	moveit::planning_interface::MoveGroupInterface::Plan plan;
-	plan.trajectory_ = moveit_robot_traj_msg;
-	confirmToAct();
-    // ROS_INFO_STREAM(plan);
-	executePlan(plan);
-	// executeTrajectory(moveit_robot_traj_msg.joint_trajectory);
 }
 
 double JRCMotionPlanner::cartesionPathPlanner(double distance_x, double distance_y, double distance_z)
